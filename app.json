@@ -40,6 +40,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "cc6a1c8b-b17f-424f-ae3c-0859508ee46b"
+      }
+    },
+    "owner": "bcemsumedev"
   }
 }
