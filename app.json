@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "lalumira",
+    "name": "La Lumira",
     "slug": "lalumira",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -8,9 +8,11 @@
     "scheme": "lalumira",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.ceser.lalumira.app"
     },
     "android": {
+      "package": "com.ceser.lalumira.app",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
