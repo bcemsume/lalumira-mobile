@@ -9,7 +9,10 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon.png",
-      "bundleIdentifier": "com.ceser.lalumira.app"
+      "bundleIdentifier": "com.ceser.lalumira.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.ceser.lalumira.app",
