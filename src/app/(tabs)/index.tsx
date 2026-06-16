@@ -5,6 +5,7 @@ import { BlurView } from 'expo-blur';
 import { MagnifyingGlass, Heart } from 'phosphor-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Link } from 'expo-router';
+import { useState } from 'react';
 import { useProducts, useCollections, useProduct, formatPrice } from '@/lib/shopify-hooks';
 import type { ShopifyProduct } from '@/lib/shopify';
 import { useLocale, useToggleLocale, useTranslation } from '@/lib/i18n';
@@ -53,6 +54,7 @@ export default function HomeScreen() {
   const locale = useLocale();
   const toggleLocale = useToggleLocale();
   const { t } = useTranslation();
+  const [scrollY, setScrollY] = useState(0);
   const { data: productsData, isLoading: productsLoading } = useProducts(8);
   const { data: collectionsData, isLoading: collectionsLoading } = useCollections(6);
   const { data: heroProductData, isLoading: heroLoading } = useProduct(HERO_PRODUCT_HANDLE);
@@ -66,12 +68,16 @@ export default function HomeScreen() {
     ? truncateText(stripHtml(heroProduct.description), 90)
     : t('home.heroSubtitleFallback');
 
+  const headerHeight = insets.top + 72;
+  const heroHeight = screenHeight * 0.7;
+  const parallaxOffset = scrollY * 0.35;
+
   return (
     <View className="flex-1 bg-background">
       {/* Header */}
       <View
         className="absolute top-0 left-0 right-0 z-50 border-b border-border/50"
-        style={{ paddingTop: insets.top + 8 }}
+        style={{ paddingTop: insets.top + 8, height: headerHeight }}
       >
         {Platform.OS === 'ios' ? (
           <BlurView intensity={64} tint="light" style={StyleSheet.absoluteFill} />
@@ -105,13 +111,15 @@ export default function HomeScreen() {
 
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ paddingBottom: insets.bottom + 80 }}
+        contentContainerStyle={{ paddingTop: headerHeight, paddingBottom: insets.bottom + 80 }}
         showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16}
+        onScroll={(e) => setScrollY(e.nativeEvent.contentOffset.y)}
       >
         {/* Hero */}
         <View
           className="relative w-full overflow-hidden bg-muted"
-          style={{ height: screenHeight * 0.7 }}
+          style={{ height: heroHeight }}
         >
           {heroLoading ? (
             <View className="flex-1 items-center justify-center">
@@ -124,7 +132,11 @@ export default function HomeScreen() {
                   uri: heroImage?.url ||
                     'https://ggrhecslgdflloszjkwl.supabase.co/storage/v1/object/public/user-assets/xP8Lx8iUwiq/components/FUIFp8WudIG.png',
                 }}
-                style={{ width: '100%', height: '100%' }}
+                style={{
+                  width: '100%',
+                  height: heroHeight * 1.25,
+                  transform: [{ translateY: parallaxOffset }],
+                }}
                 contentFit="cover"
                 contentPosition="center"
               />

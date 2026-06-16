@@ -10,10 +10,48 @@ import {
   CART_LINES_ADD_MUTATION,
   CART_LINES_UPDATE_MUTATION,
   CART_LINES_REMOVE_MUTATION,
+  CUSTOMER_CREATE_MUTATION,
+  CUSTOMER_ACCESS_TOKEN_CREATE_MUTATION,
+  CUSTOMER_ACCESS_TOKEN_DELETE_MUTATION,
+  CUSTOMER_QUERY,
 } from './shopify-queries';
 import { shopifyClient, type ShopifyProduct, type ShopifyCollection, type ShopifyCart, formatPrice } from './shopify';
 
 const CART_ID_KEY = 'lalumira.cartId';
+const CUSTOMER_TOKEN_KEY = 'lalumira.customerToken';
+
+type ShopifyCustomer = {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone: string | null;
+  acceptsMarketing: boolean;
+  defaultAddress: {
+    id: string;
+    address1: string;
+    address2: string | null;
+    city: string;
+    province: string;
+    country: string;
+    zip: string;
+    phone: string | null;
+  } | null;
+  orders: {
+    nodes: {
+      id: string;
+      name: string;
+      orderNumber: number;
+      processedAt: string;
+      financialStatus: string;
+      fulfillmentStatus: string;
+      totalPrice: {
+        amount: string;
+        currencyCode: string;
+      };
+    }[];
+  };
+};
 
 function normalizeErrors(result: { errors?: unknown; data?: unknown }) {
   const hasData = result.data !== undefined && result.data !== null;
@@ -41,6 +79,22 @@ async function getCartId(): Promise<string | null> {
 
 async function setCartId(cartId: string) {
   await SecureStore.setItemAsync(CART_ID_KEY, cartId);
+}
+
+async function getCustomerToken(): Promise<string | null> {
+  try {
+    return await SecureStore.getItemAsync(CUSTOMER_TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+async function setCustomerToken(token: string) {
+  await SecureStore.setItemAsync(CUSTOMER_TOKEN_KEY, token);
+}
+
+async function deleteCustomerToken() {
+  await SecureStore.deleteItemAsync(CUSTOMER_TOKEN_KEY);
 }
 
 export { formatPrice };
@@ -214,5 +268,137 @@ export function useCart() {
     updateLine,
     removeLine,
     refetch: cartQuery.refetch,
+  };
+}
+
+export type AuthResult = {
+  success: boolean;
+  error?: string;
+};
+
+export function useAuth() {
+  const queryClient = useQueryClient();
+
+  const customerQuery = useQuery<{ customer: ShopifyCustomer | null }>({
+    queryKey: ['customer'],
+    queryFn: async () => {
+      const token = await getCustomerToken();
+      if (!token) return { customer: null };
+      try {
+        const result = await shopifyClient.request(CUSTOMER_QUERY, { customerAccessToken: token });
+        return normalizeErrors(result) as { customer: ShopifyCustomer | null };
+      } catch {
+        await deleteCustomerToken();
+        return { customer: null };
+      }
+    },
+    retry: false,
+  });
+
+  const loginMutation = useMutation({
+    mutationFn: async ({ email, password }: { email: string; password: string }) => {
+      const result = await shopifyClient.request(CUSTOMER_ACCESS_TOKEN_CREATE_MUTATION, {
+        input: { email, password },
+      });
+      const data = normalizeErrors(result) as {
+        customerAccessTokenCreate: {
+          customerAccessToken: { accessToken: string; expiresAt: string } | null;
+          customerUserErrors: { field: string[]; message: string }[];
+        };
+      };
+      if (data.customerAccessTokenCreate.customerUserErrors.length > 0) {
+        throw new Error(data.customerAccessTokenCreate.customerUserErrors.map((e) => e.message).join(', '));
+      }
+      const token = data.customerAccessTokenCreate.customerAccessToken?.accessToken;
+      if (!token) throw new Error('Login failed');
+      return token;
+    },
+    onSuccess: (token) => {
+      setCustomerToken(token);
+      queryClient.invalidateQueries({ queryKey: ['customer'] });
+    },
+  });
+
+  const registerMutation = useMutation({
+    mutationFn: async (input: { email: string; password: string; firstName: string; lastName: string }) => {
+      const createResult = await shopifyClient.request(CUSTOMER_CREATE_MUTATION, { input });
+      const createData = normalizeErrors(createResult) as {
+        customerCreate: {
+          customer: ShopifyCustomer | null;
+          customerUserErrors: { field: string[]; message: string }[];
+        };
+      };
+      if (createData.customerCreate.customerUserErrors.length > 0) {
+        throw new Error(createData.customerCreate.customerUserErrors.map((e) => e.message).join(', '));
+      }
+      const loginResult = await shopifyClient.request(CUSTOMER_ACCESS_TOKEN_CREATE_MUTATION, {
+        input: { email: input.email, password: input.password },
+      });
+      const loginData = normalizeErrors(loginResult) as {
+        customerAccessTokenCreate: {
+          customerAccessToken: { accessToken: string; expiresAt: string } | null;
+          customerUserErrors: { field: string[]; message: string }[];
+        };
+      };
+      if (loginData.customerAccessTokenCreate.customerUserErrors.length > 0) {
+        throw new Error(loginData.customerAccessTokenCreate.customerUserErrors.map((e) => e.message).join(', '));
+      }
+      const token = loginData.customerAccessTokenCreate.customerAccessToken?.accessToken;
+      if (!token) throw new Error('Registration failed');
+      return token;
+    },
+    onSuccess: (token) => {
+      setCustomerToken(token);
+      queryClient.invalidateQueries({ queryKey: ['customer'] });
+    },
+  });
+
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      const token = await getCustomerToken();
+      if (token) {
+        await shopifyClient.request(CUSTOMER_ACCESS_TOKEN_DELETE_MUTATION, { customerAccessToken: token });
+      }
+      await deleteCustomerToken();
+    },
+    onSuccess: () => {
+      queryClient.setQueryData(['customer'], { customer: null });
+    },
+  });
+
+  async function login(email: string, password: string): Promise<AuthResult> {
+    try {
+      await loginMutation.mutateAsync({ email, password });
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: err instanceof Error ? err.message : 'Login failed' };
+    }
+  }
+
+  async function register(input: { email: string; password: string; firstName: string; lastName: string }): Promise<AuthResult> {
+    try {
+      await registerMutation.mutateAsync(input);
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: err instanceof Error ? err.message : 'Registration failed' };
+    }
+  }
+
+  async function logout() {
+    await logoutMutation.mutateAsync();
+  }
+
+  return {
+    customer: customerQuery.data?.customer ?? null,
+    isLoading: customerQuery.isLoading,
+    isPendingLogin: loginMutation.isPending,
+    isPendingRegister: registerMutation.isPending,
+    isPendingLogout: logoutMutation.isPending,
+    loginError: loginMutation.error,
+    registerError: registerMutation.error,
+    login,
+    register,
+    logout,
+    refetch: customerQuery.refetch,
   };
 }

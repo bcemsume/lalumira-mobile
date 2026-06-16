@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ScrollView, View, Text, Pressable, TextInput, Platform } from 'react-native';
+import { ScrollView, View, Text, Pressable, TextInput, Platform, ActivityIndicator } from 'react-native';
 import { Image } from 'expo-image';
 import {
   Camera,
@@ -15,6 +15,7 @@ import {
 } from 'phosphor-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from '@/lib/i18n';
+import { useAuth } from '@/lib/shopify-hooks';
 
 function useMenuItems(t: (key: string) => string) {
   return [
@@ -29,23 +30,37 @@ function useMenuItems(t: (key: string) => string) {
 function AuthForm({ onLogin }: { onLogin: () => void }) {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
+  const { login, register, isPendingLogin, isPendingRegister, loginError, registerError } = useAuth();
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   async function handleSubmit() {
-    setLoading(true);
-    // TODO: integrate Shopify customerAccessTokenCreate / customerCreate
-    setTimeout(() => {
-      setLoading(false);
-      onLogin();
-    }, 800);
+    setFormError(null);
+    if (mode === 'register') {
+      const result = await register({ email, password, firstName, lastName });
+      if (result.success) {
+        onLogin();
+      } else {
+        setFormError(result.error ?? t('profile.registerError'));
+      }
+    } else {
+      const result = await login(email, password);
+      if (result.success) {
+        onLogin();
+      } else {
+        setFormError(result.error ?? t('profile.loginError'));
+      }
+    }
   }
 
   const isRegister = mode === 'register';
+  const loading = isPendingLogin || isPendingRegister;
+  const mutationError = isRegister ? registerError : loginError;
+  const displayError = formError || (mutationError instanceof Error ? mutationError.message : null);
 
   return (
     <View style={{ paddingTop: insets.top + 24 }}>
@@ -64,6 +79,17 @@ function AuthForm({ onLogin }: { onLogin: () => void }) {
             ? t('profile.registerSubtitle')
             : t('profile.loginSubtitle')}
         </Text>
+
+        {displayError ? (
+          <View className="bg-destructive/10 border border-destructive/20 rounded-xl px-4 py-3 mb-4">
+            <Text
+              className="text-sm text-destructive text-center"
+              style={{ fontFamily: 'Inter_400Regular' }}
+            >
+              {displayError}
+            </Text>
+          </View>
+        ) : null}
 
         {isRegister ? (
           <View className="flex-row gap-4 mb-4">
@@ -127,6 +153,8 @@ function AuthForm({ onLogin }: { onLogin: () => void }) {
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
+            autoComplete="email"
+            textContentType="emailAddress"
           />
         </View>
 
@@ -146,6 +174,8 @@ function AuthForm({ onLogin }: { onLogin: () => void }) {
             value={password}
             onChangeText={setPassword}
             secureTextEntry
+            autoComplete={isRegister ? 'password-new' : 'password'}
+            textContentType={isRegister ? 'newPassword' : 'password'}
           />
         </View>
 
@@ -154,12 +184,16 @@ function AuthForm({ onLogin }: { onLogin: () => void }) {
           disabled={loading}
           className="bg-foreground py-4 rounded-full items-center mb-6"
         >
-          <Text
-            className="text-xs uppercase tracking-[0.2em] text-background"
-            style={{ fontFamily: 'Inter_700Bold' }}
-          >
-            {loading ? t('profile.pleaseWait') : isRegister ? t('profile.createAccountButton') : t('profile.signIn')}
-          </Text>
+          {loading ? (
+            <ActivityIndicator size="small" color="#fcfaf8" />
+          ) : (
+            <Text
+              className="text-xs uppercase tracking-[0.2em] text-background"
+              style={{ fontFamily: 'Inter_700Bold' }}
+            >
+              {isRegister ? t('profile.createAccountButton') : t('profile.signIn')}
+            </Text>
+          )}
         </Pressable>
 
         <View className="flex-row justify-center items-center">
@@ -186,7 +220,17 @@ function AuthForm({ onLogin }: { onLogin: () => void }) {
 function ProfileContent({ onLogout }: { onLogout: () => void }) {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
+  const { customer, isPendingLogout, logout } = useAuth();
   const menuItems = useMenuItems(t);
+
+  async function handleLogout() {
+    await logout();
+    onLogout();
+  }
+
+  const displayName = customer
+    ? `${customer.firstName || ''} ${customer.lastName || ''}`.trim() || customer.email
+    : t('profile.guestUser');
 
   return (
     <ScrollView
@@ -234,13 +278,13 @@ function ProfileContent({ onLogout }: { onLogout: () => void }) {
           className="text-2xl mb-1 text-foreground"
           style={{ fontFamily: 'CormorantGaramond_500Medium' }}
         >
-          {t('profile.guestUser')}
+          {displayName}
         </Text>
         <Text
           className="text-xs text-muted-foreground tracking-widest uppercase"
           style={{ fontFamily: 'Inter_400Regular' }}
         >
-          {t('profile.memberSince')}
+          {customer ? t('profile.memberSince') : t('profile.guestSubtitle')}
         </Text>
       </View>
 
@@ -283,15 +327,20 @@ function ProfileContent({ onLogout }: { onLogout: () => void }) {
         </View>
 
         <Pressable
-          onPress={onLogout}
+          onPress={handleLogout}
+          disabled={isPendingLogout}
           className="w-full border border-destructive/20 py-4 rounded-full mt-12 items-center"
         >
-          <Text
-            className="text-xs uppercase tracking-widest text-destructive"
-            style={{ fontFamily: 'Inter_700Bold' }}
-          >
-            {t('profile.logout')}
-          </Text>
+          {isPendingLogout ? (
+            <ActivityIndicator size="small" color="#b91c1c" />
+          ) : (
+            <Text
+              className="text-xs uppercase tracking-widest text-destructive"
+              style={{ fontFamily: 'Inter_700Bold' }}
+            >
+              {t('profile.logout')}
+            </Text>
+          )}
         </Pressable>
 
         <View className="mt-12 items-center">

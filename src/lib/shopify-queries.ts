@@ -462,6 +462,189 @@ export const GET_CART_QUERY = `
   }
 `;
 
+export const CUSTOMER_CREATE_MUTATION = `
+  mutation CustomerCreate($input: CustomerCreateInput!) {
+    customerCreate(input: $input) {
+      customer {
+        id
+        email
+        firstName
+        lastName
+      }
+      customerUserErrors {
+        field
+        message
+        code
+      }
+    }
+  }
+`;
+
+export const CUSTOMER_ACCESS_TOKEN_CREATE_MUTATION = `
+  mutation CustomerAccessTokenCreate($input: CustomerAccessTokenCreateInput!) {
+    customerAccessTokenCreate(input: $input) {
+      customerAccessToken {
+        accessToken
+        expiresAt
+      }
+      customerUserErrors {
+        field
+        message
+        code
+      }
+    }
+  }
+`;
+
+export const CUSTOMER_ACCESS_TOKEN_DELETE_MUTATION = `
+  mutation CustomerAccessTokenDelete($customerAccessToken: String!) {
+    customerAccessTokenDelete(customerAccessToken: $customerAccessToken) {
+      deletedAccessToken
+      deletedCustomerAccessTokenId
+      userErrors {
+        field
+        message
+      }
+    }
+  }
+`;
+
+export const CUSTOMER_QUERY = `
+  query Customer($customerAccessToken: String!) {
+    customer(customerAccessToken: $customerAccessToken) {
+      id
+      email
+      firstName
+      lastName
+      phone
+      acceptsMarketing
+      defaultAddress {
+        id
+        address1
+        address2
+        city
+        province
+        country
+        zip
+        phone
+      }
+      orders(first: 20) {
+        nodes {
+          id
+          name
+          orderNumber
+          processedAt
+          financialStatus
+          fulfillmentStatus
+          totalPrice {
+            amount
+            currencyCode
+          }
+        }
+      }
+    }
+  }
+`;
+
+export const CUSTOMER_ADDRESSES_QUERY = `
+  query CustomerAddresses($customerAccessToken: String!) {
+    customer(customerAccessToken: $customerAccessToken) {
+      id
+      addresses(first: 20) {
+        nodes {
+          id
+          address1
+          address2
+          city
+          province
+          country
+          zip
+          phone
+          firstName
+          lastName
+        }
+      }
+      defaultAddress {
+        id
+      }
+    }
+  }
+`;
+
+export const CUSTOMER_UPDATE_MUTATION = `
+  mutation CustomerUpdate($customerAccessToken: String!, $customer: CustomerUpdateInput!) {
+    customerUpdate(customerAccessToken: $customerAccessToken, customer: $customer) {
+      customer {
+        id
+        email
+        firstName
+        lastName
+        phone
+      }
+      customerUserErrors {
+        field
+        message
+        code
+      }
+    }
+  }
+`;
+
+export const CUSTOMER_ADDRESS_CREATE_MUTATION = `
+  mutation CustomerAddressCreate($customerAccessToken: String!, $address: MailingAddressInput!) {
+    customerAddressCreate(customerAccessToken: $customerAccessToken, address: $address) {
+      customerAddress {
+        id
+      }
+      customerUserErrors {
+        field
+        message
+        code
+      }
+    }
+  }
+`;
+
+export const CUSTOMER_DEFAULT_ADDRESS_UPDATE_MUTATION = `
+  mutation CustomerDefaultAddressUpdate($customerAccessToken: String!, $addressId: ID!) {
+    customerDefaultAddressUpdate(customerAccessToken: $customerAccessToken, addressId: $addressId) {
+      customer {
+        id
+      }
+      customerUserErrors {
+        field
+        message
+        code
+      }
+    }
+  }
+`;
+
+export const CUSTOMER_ADDRESS_DELETE_MUTATION = `
+  mutation CustomerAddressDelete($id: ID!, $customerAccessToken: String!) {
+    customerAddressDelete(id: $id, customerAccessToken: $customerAccessToken) {
+      deletedAddressId
+      customerUserErrors {
+        field
+        message
+        code
+      }
+    }
+  }
+`;
+
+export const CUSTOMER_RECOVER_MUTATION = `
+  mutation CustomerRecover($email: String!) {
+    customerRecover(email: $email) {
+      customerUserErrors {
+        field
+        message
+        code
+      }
+    }
+  }
+`;
+
 export const GET_SHOP_QUERY = `
   query GetShop {
     shop {

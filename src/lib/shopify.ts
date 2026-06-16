@@ -1,12 +1,14 @@
 export const SHOPIFY_STORE_DOMAIN = '0b8fa9-3.myshopify.com';
 export const SHOPIFY_API_VERSION = '2025-04';
 export const SHOPIFY_STOREFRONT_URL = `https://${SHOPIFY_STORE_DOMAIN}/api/${SHOPIFY_API_VERSION}/graphql.json`;
+export const SHOPIFY_STOREFRONT_ACCESS_TOKEN = 'bf0b182d0aea247c57e5b29993e80153';
 
 async function request(query: string, variables?: Record<string, unknown>) {
   const response = await fetch(SHOPIFY_STOREFRONT_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'X-Shopify-Storefront-Access-Token': SHOPIFY_STOREFRONT_ACCESS_TOKEN,
     },
     body: JSON.stringify({ query, variables }),
   });
