@@ -56,7 +56,7 @@ export default function HomeScreen() {
   const { t } = useTranslation();
   const [scrollY, setScrollY] = useState(0);
   const { data: productsData, isLoading: productsLoading } = useProducts(8);
-  const { data: collectionsData, isLoading: collectionsLoading } = useCollections(6);
+  const { data: collectionsData, isLoading: collectionsLoading } = useCollections(20);
   const { data: heroData, isLoading: heroLoading } = useHeroMetaobject();
 
   const products = productsData?.products.nodes ?? [];
