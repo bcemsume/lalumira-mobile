@@ -17,8 +17,6 @@ const tr = {
     searchPlaceholder: 'Lalumira\'da Ara...',
     allJewelry: 'Tüm Takılar',
     items: 'Ürün',
-    curatedCollection: 'Özenle Seçilmiş Koleksiyon',
-    allCollectionSubtitle: 'Seçili yüzüklerde %15 indirim',
     fineJewelry: 'İnce Takı',
   },
   product: {
@@ -92,8 +90,6 @@ const en = {
     searchPlaceholder: 'Search Lalumira...',
     allJewelry: 'All Jewelry',
     items: 'Items',
-    curatedCollection: 'Curated Collection',
-    allCollectionSubtitle: 'Selected Rings - 15% Off',
     fineJewelry: 'Fine Jewelry',
   },
   product: {

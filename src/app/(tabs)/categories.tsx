@@ -117,12 +117,6 @@ export default function CategoriesScreen() {
                 >
                   {activeCollectionTitle || t('categories.allJewelry')}
                 </Text>
-                <Text
-                  className="text-[10px] text-white/90 uppercase tracking-widest"
-                  style={{ fontFamily: 'Inter_400Regular' }}
-                >
-                  {activeCollectionTitle ? t('categories.curatedCollection') : t('categories.allCollectionSubtitle')}
-                </Text>
               </View>
             </View>
           </View>
