@@ -1,5 +1,15 @@
-import { useMemo, useState } from 'react';
-import { ScrollView, View, Text, Pressable, TextInput, Platform, StyleSheet, ActivityIndicator } from 'react-native';
+import { useMemo, useState, useRef } from 'react';
+import {
+  ScrollView,
+  View,
+  Text,
+  Pressable,
+  TextInput,
+  Platform,
+  StyleSheet,
+  ActivityIndicator,
+  Dimensions,
+} from 'react-native';
 import { Image } from 'expo-image';
 import { BlurView } from 'expo-blur';
 import { MagnifyingGlass, Heart, PlusCircle } from 'phosphor-react-native';
@@ -8,6 +18,8 @@ import { Link, useLocalSearchParams } from 'expo-router';
 import { useProducts, useCollections, useCollection, useCart, formatPrice } from '@/lib/shopify-hooks';
 import type { ShopifyProduct } from '@/lib/shopify';
 import { useTranslation } from '@/lib/i18n';
+
+const screenWidth = Dimensions.get('window').width;
 
 function getFirstImage(product: ShopifyProduct) {
   return product.featuredImage || product.images.nodes[0] || product.variants.nodes[0]?.image || null;
@@ -64,6 +76,18 @@ export default function CategoriesScreen() {
   }, [activeCollection, params.collection, collection]);
 
   const isLoading = productsLoading || collectionsLoading || collectionLoading;
+
+  const tabScrollRef = useRef<ScrollView>(null);
+  const tabLayouts = useRef<Record<string, { x: number; width: number }>>({});
+
+  function handleSelectTab(handle: string) {
+    setActiveHandle(handle);
+    const layout = tabLayouts.current[handle];
+    if (layout && tabScrollRef.current) {
+      const centerOffset = layout.x + layout.width / 2 - screenWidth / 2;
+      tabScrollRef.current.scrollTo({ x: Math.max(0, centerOffset), animated: true });
+    }
+  }
 
   return (
     <View className="flex-1 bg-background">
@@ -125,32 +149,45 @@ export default function CategoriesScreen() {
         {/* Collection tabs */}
         <View className="border-b border-border/30">
           <ScrollView
+            ref={tabScrollRef}
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 24, gap: 24 }}
+            contentContainerStyle={{ paddingHorizontal: 24 }}
+            scrollEventThrottle={16}
           >
-            {filters.map((filter) => {
-              const active = filter.handle === activeHandle;
-              return (
-                <Pressable key={filter.handle} onPress={() => setActiveHandle(filter.handle)} className="pb-2">
-                  <View
-                    style={{
-                      borderBottomWidth: active ? 2 : 0,
-                      borderBottomColor: '#c5a880',
+            <View className="flex-row items-center py-2">
+              {filters.map((filter, index) => {
+                const active = filter.handle === activeHandle;
+                return (
+                  <Pressable
+                    key={filter.handle}
+                    onPress={() => handleSelectTab(filter.handle)}
+                    onLayout={(e) => {
+                      const { x, width } = e.nativeEvent.layout;
+                      tabLayouts.current[filter.handle] = { x, width };
                     }}
+                    className="mr-8 last:mr-0"
                   >
-                    <Text
-                      className={`text-xs uppercase tracking-widest whitespace-nowrap ${
-                        active ? 'text-foreground' : 'text-muted-foreground'
-                      }`}
-                      style={{ fontFamily: active ? 'Inter_700Bold' : 'Inter_400Regular' }}
+                    <View
+                      style={{
+                        borderBottomWidth: active ? 2 : 0,
+                        borderBottomColor: '#c5a880',
+                        paddingBottom: 8,
+                      }}
                     >
-                      {filter.title}
-                    </Text>
-                  </View>
-                </Pressable>
-              );
-            })}
+                      <Text
+                        className={`text-sm uppercase tracking-widest whitespace-nowrap ${
+                          active ? 'text-foreground' : 'text-muted-foreground'
+                        }`}
+                        style={{ fontFamily: active ? 'Inter_700Bold' : 'Inter_400Regular' }}
+                      >
+                        {filter.title}
+                      </Text>
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </View>
           </ScrollView>
         </View>
 
