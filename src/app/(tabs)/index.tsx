@@ -67,12 +67,13 @@ export default function HomeScreen() {
   const getField = (key: string) => heroFields.find((f) => f.key === key);
 
   const heroDescriptionField = getField('hero_description');
+  const heroTitleField = getField('hero_title');
   const heroImageField = getField('hero_image');
   const heroProductRef = getField('hero_product')?.reference as { title?: string; handle?: string; description?: string; featuredImage?: { url: string; altText: string | null } } | null | undefined;
 
   const heroImageUrl = heroImageField?.reference?.image?.url || heroProductRef?.featuredImage?.url ||
     'https://ggrhecslgdflloszjkwl.supabase.co/storage/v1/object/public/user-assets/xP8Lx8iUwiq/components/FUIFp8WudIG.png';
-  const heroTitle = heroProductRef?.title || t('home.heroTitleFallback');
+  const heroTitle = heroTitleField?.value || heroProductRef?.title || t('home.heroTitleFallback');
   const heroSubtitle = heroDescriptionField?.value || heroProductRef?.description
     ? truncateText(stripHtml(heroProductRef?.description || heroDescriptionField?.value || ''), 90)
     : t('home.heroSubtitleFallback');
@@ -294,7 +295,7 @@ export default function HomeScreen() {
           ) : (
             <View className="flex-row flex-wrap">
               {collections.map((cat, index) => {
-                const imageUrl = cat.image?.url || cat.products.nodes[0]?.featuredImage?.url;
+                const imageUrl = cat.image?.url;
                 const isEven = index % 2 === 0;
                 return (
                   <Link key={cat.id} href={`/categories?collection=${cat.handle}`} asChild>

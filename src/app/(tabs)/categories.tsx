@@ -103,7 +103,7 @@ export default function CategoriesScreen() {
           <View className="relative w-full aspect-[21/9] rounded-lg overflow-hidden border border-border bg-muted">
             {(() => {
               const bannerUrl = collection
-                ? collection.image?.url || collection.products.nodes[0]?.featuredImage?.url
+                ? collection.image?.url
                 : 'https://ggrhecslgdflloszjkwl.supabase.co/storage/v1/object/public/user-assets/xP8Lx8iUwiq/components/s4DXXhFuVd1.png';
               return bannerUrl ? (
                 <Image source={{ uri: bannerUrl }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
