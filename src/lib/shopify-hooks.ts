@@ -14,8 +14,9 @@ import {
   CUSTOMER_ACCESS_TOKEN_CREATE_MUTATION,
   CUSTOMER_ACCESS_TOKEN_DELETE_MUTATION,
   CUSTOMER_QUERY,
+  GET_HERO_METAOBJECT_QUERY,
 } from './shopify-queries';
-import { shopifyClient, type ShopifyProduct, type ShopifyCollection, type ShopifyCart, formatPrice } from './shopify';
+import { shopifyClient, type ShopifyProduct, type ShopifyCollection, type ShopifyCart, type ShopifyHeroMetaobject, formatPrice } from './shopify';
 
 const CART_ID_KEY = 'lalumira.cartId';
 const CUSTOMER_TOKEN_KEY = 'lalumira.customerToken';
@@ -120,6 +121,16 @@ export function useProduct(handle: string) {
       return normalizeErrors(result) as { product: ShopifyProduct | null };
     },
     enabled: Boolean(handle),
+  });
+}
+
+export function useHeroMetaobject() {
+  return useQuery<{ metaobjects: { nodes: ShopifyHeroMetaobject[] } }>({
+    queryKey: ['hero'],
+    queryFn: async () => {
+      const result = await shopifyClient.request(GET_HERO_METAOBJECT_QUERY);
+      return normalizeErrors(result) as { metaobjects: { nodes: ShopifyHeroMetaobject[] } };
+    },
   });
 }
 

@@ -6,7 +6,7 @@ import { MagnifyingGlass, Heart } from 'phosphor-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Link } from 'expo-router';
 import { useState } from 'react';
-import { useProducts, useCollections, useProduct, formatPrice } from '@/lib/shopify-hooks';
+import { useProducts, useCollections, useHeroMetaobject, formatPrice } from '@/lib/shopify-hooks';
 import type { ShopifyProduct } from '@/lib/shopify';
 import { useLocale, useToggleLocale, useTranslation } from '@/lib/i18n';
 
@@ -33,7 +33,7 @@ function truncateText(text: string, maxLength: number) {
   return text.slice(0, maxLength).trim() + '...';
 }
 
-const HERO_PRODUCT_HANDLE = 'white-baroque-pearl';
+
 const { height: screenHeight } = Dimensions.get('window');
 function getFirstImage(product: ShopifyProduct) {
   return product.featuredImage || product.images.nodes[0] || product.variants.nodes[0]?.image || null;
@@ -57,16 +57,26 @@ export default function HomeScreen() {
   const [scrollY, setScrollY] = useState(0);
   const { data: productsData, isLoading: productsLoading } = useProducts(8);
   const { data: collectionsData, isLoading: collectionsLoading } = useCollections(6);
-  const { data: heroProductData, isLoading: heroLoading } = useProduct(HERO_PRODUCT_HANDLE);
+  const { data: heroData, isLoading: heroLoading } = useHeroMetaobject();
 
   const products = productsData?.products.nodes ?? [];
   const collections = collectionsData?.collections.nodes ?? [];
-  const heroProduct = heroProductData?.product ?? null;
-  const heroImage = heroProduct?.featuredImage || heroProduct?.images.nodes[0] || null;
-  const heroTitle = heroProduct?.title || t('home.heroTitleFallback');
-  const heroSubtitle = heroProduct?.description
-    ? truncateText(stripHtml(heroProduct.description), 90)
+
+  const heroMeta = heroData?.metaobjects.nodes[0] ?? null;
+  const heroFields = heroMeta?.fields ?? [];
+  const getField = (key: string) => heroFields.find((f) => f.key === key);
+
+  const heroDescriptionField = getField('hero_description');
+  const heroImageField = getField('hero_image');
+  const heroProductRef = getField('hero_product')?.reference as { title?: string; handle?: string; description?: string; featuredImage?: { url: string; altText: string | null } } | null | undefined;
+
+  const heroImageUrl = heroImageField?.reference?.image?.url || heroProductRef?.featuredImage?.url ||
+    'https://ggrhecslgdflloszjkwl.supabase.co/storage/v1/object/public/user-assets/xP8Lx8iUwiq/components/FUIFp8WudIG.png';
+  const heroTitle = heroProductRef?.title || t('home.heroTitleFallback');
+  const heroSubtitle = heroDescriptionField?.value || heroProductRef?.description
+    ? truncateText(stripHtml(heroProductRef?.description || heroDescriptionField?.value || ''), 90)
     : t('home.heroSubtitleFallback');
+  const heroHandle = heroProductRef?.handle;
 
   const headerHeight = insets.top + 72;
   const heroHeight = screenHeight * 0.7;
@@ -129,8 +139,7 @@ export default function HomeScreen() {
             <>
               <Image
                 source={{
-                  uri: heroImage?.url ||
-                    'https://ggrhecslgdflloszjkwl.supabase.co/storage/v1/object/public/user-assets/xP8Lx8iUwiq/components/FUIFp8WudIG.png',
+                  uri: heroImageUrl,
                 }}
                 style={{
                   width: '100%',
@@ -160,8 +169,8 @@ export default function HomeScreen() {
                 >
                   {heroSubtitle}
                 </Text>
-                {heroProduct ? (
-                  <Link href={`/product/${heroProduct.handle}`} asChild>
+                {heroHandle ? (
+                  <Link href={`/product/${heroHandle}`} asChild>
                     <Pressable className="bg-foreground px-8 py-3 rounded-full">
                       <Text
                         className="text-xs uppercase tracking-[0.2em] text-background"

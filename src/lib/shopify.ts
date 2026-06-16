@@ -18,6 +18,31 @@ async function request(query: string, variables?: Record<string, unknown>) {
 
 export const shopifyClient = { request };
 
+export type ShopifyHeroMetaobject = {
+  id: string;
+  handle: string;
+  fields: {
+    key: string;
+    value: string;
+    type: string;
+    reference: {
+      __typename: string;
+      image?: {
+        url: string;
+        altText: string | null;
+      };
+      id?: string;
+      title?: string;
+      handle?: string;
+      description?: string;
+      featuredImage?: {
+        url: string;
+        altText: string | null;
+      };
+    } | null;
+  }[];
+};
+
 export type ShopifyProduct = {
   id: string;
   title: string;

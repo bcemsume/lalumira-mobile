@@ -645,6 +645,41 @@ export const CUSTOMER_RECOVER_MUTATION = `
   }
 `;
 
+export const GET_HERO_METAOBJECT_QUERY = `
+  query GetHeroMetaobject {
+    metaobjects(type: "homepage_hero", first: 1) {
+      nodes {
+        id
+        handle
+        fields {
+          key
+          value
+          type
+          reference {
+            __typename
+            ... on MediaImage {
+              image {
+                url
+                altText
+              }
+            }
+            ... on Product {
+              id
+              title
+              handle
+              description
+              featuredImage {
+                url
+                altText
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
 export const GET_SHOP_QUERY = `
   query GetShop {
     shop {
