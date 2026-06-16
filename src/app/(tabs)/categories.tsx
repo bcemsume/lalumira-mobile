@@ -166,17 +166,17 @@ export default function CategoriesScreen() {
                       const { x, width } = e.nativeEvent.layout;
                       tabLayouts.current[filter.handle] = { x, width };
                     }}
-                    className="mr-8 last:mr-0"
+                    className="mr-5 last:mr-0"
                   >
                     <View
                       style={{
                         borderBottomWidth: active ? 2 : 0,
                         borderBottomColor: '#c5a880',
-                        paddingBottom: 8,
+                        paddingBottom: 6,
                       }}
                     >
                       <Text
-                        className={`text-sm uppercase tracking-widest whitespace-nowrap ${
+                        className={`text-xs uppercase tracking-widest whitespace-nowrap ${
                           active ? 'text-foreground' : 'text-muted-foreground'
                         }`}
                         style={{ fontFamily: active ? 'Inter_700Bold' : 'Inter_400Regular' }}
