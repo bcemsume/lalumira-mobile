@@ -155,8 +155,8 @@ export default function CategoriesScreen() {
             contentContainerStyle={{ paddingHorizontal: 24 }}
             scrollEventThrottle={16}
           >
-            <View className="flex-row items-center py-2">
-              {filters.map((filter, index) => {
+            <View className="flex-row items-center py-2" style={{ gap: 20 }}>
+              {filters.map((filter) => {
                 const active = filter.handle === activeHandle;
                 return (
                   <Pressable
@@ -166,7 +166,7 @@ export default function CategoriesScreen() {
                       const { x, width } = e.nativeEvent.layout;
                       tabLayouts.current[filter.handle] = { x, width };
                     }}
-                    className="mr-5 last:mr-0"
+                    className=""
                   >
                     <View
                       style={{
