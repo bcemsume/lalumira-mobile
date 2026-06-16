@@ -15,8 +15,9 @@ import {
   CUSTOMER_ACCESS_TOKEN_DELETE_MUTATION,
   CUSTOMER_QUERY,
   GET_HERO_METAOBJECT_QUERY,
+  GET_SLIDER_HERO_METAOBJECT_QUERY,
 } from './shopify-queries';
-import { shopifyClient, type ShopifyProduct, type ShopifyCollection, type ShopifyCart, type ShopifyHeroMetaobject, formatPrice } from './shopify';
+import { shopifyClient, type ShopifyProduct, type ShopifyCollection, type ShopifyCart, type ShopifyHeroMetaobject, type ShopifySliderHeroMetaobject, formatPrice } from './shopify';
 
 const CART_ID_KEY = 'lalumira.cartId';
 const CUSTOMER_TOKEN_KEY = 'lalumira.customerToken';
@@ -130,6 +131,16 @@ export function useHeroMetaobject() {
     queryFn: async () => {
       const result = await shopifyClient.request(GET_HERO_METAOBJECT_QUERY);
       return normalizeErrors(result) as { metaobjects: { nodes: ShopifyHeroMetaobject[] } };
+    },
+  });
+}
+
+export function useSliderHeroMetaobject() {
+  return useQuery<{ metaobjects: { nodes: ShopifySliderHeroMetaobject[] } }>({
+    queryKey: ['sliderHero'],
+    queryFn: async () => {
+      const result = await shopifyClient.request(GET_SLIDER_HERO_METAOBJECT_QUERY);
+      return normalizeErrors(result) as { metaobjects: { nodes: ShopifySliderHeroMetaobject[] } };
     },
   });
 }

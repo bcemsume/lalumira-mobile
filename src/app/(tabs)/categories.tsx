@@ -15,7 +15,7 @@ import { BlurView } from 'expo-blur';
 import { MagnifyingGlass, Heart, PlusCircle } from 'phosphor-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Link, useLocalSearchParams } from 'expo-router';
-import { useProducts, useCollections, useCollection, useCart, formatPrice } from '@/lib/shopify-hooks';
+import { useProducts, useCollections, useCollection, useCart, useSliderHeroMetaobject, formatPrice } from '@/lib/shopify-hooks';
 import type { ShopifyProduct } from '@/lib/shopify';
 import { useTranslation } from '@/lib/i18n';
 
@@ -43,6 +43,7 @@ export default function CategoriesScreen() {
   const [activeHandle, setActiveHandle] = useState('');
   const { data: collectionsData, isLoading: collectionsLoading } = useCollections(20);
   const { data: productsData, isLoading: productsLoading } = useProducts(50, search || undefined);
+  const { data: sliderHeroData, isLoading: sliderHeroLoading } = useSliderHeroMetaobject();
   const filters = useMemo(() => {
     const list = collectionsData?.collections.nodes.map((c) => ({ title: c.title, handle: c.handle })) ?? [];
     return [{ title: t('categories.allJewelry'), handle: '' }, ...list];
@@ -75,7 +76,15 @@ export default function CategoriesScreen() {
     return null;
   }, [activeCollection, params.collection, collection]);
 
-  const isLoading = productsLoading || collectionsLoading || collectionLoading;
+  const isLoading = productsLoading || collectionsLoading || collectionLoading || sliderHeroLoading;
+
+  const sliderMeta = sliderHeroData?.metaobjects.nodes[0] ?? null;
+  const sliderFields = sliderMeta?.fields ?? [];
+  const sliderImageField = sliderFields.find((f) => f.key === 'slider_image');
+  const sliderTitleField = sliderFields.find((f) => f.key === 'slider_title');
+  const sliderImageUrl = sliderImageField?.reference?.image?.url ||
+    'https://ggrhecslgdflloszjkwl.supabase.co/storage/v1/object/public/user-assets/xP8Lx8iUwiq/components/s4DXXhFuVd1.png';
+  const sliderTitle = sliderTitleField?.value || activeCollectionTitle || t('categories.allJewelry');
 
   const tabScrollRef = useRef<ScrollView>(null);
   const tabLayouts = useRef<Record<string, { x: number; width: number }>>({});
@@ -126,9 +135,9 @@ export default function CategoriesScreen() {
         <View className="px-6 py-6">
           <View className="relative w-full aspect-[21/9] rounded-lg overflow-hidden border border-border bg-muted">
             {(() => {
-              const bannerUrl = collection
-                ? collection.image?.url
-                : 'https://ggrhecslgdflloszjkwl.supabase.co/storage/v1/object/public/user-assets/xP8Lx8iUwiq/components/s4DXXhFuVd1.png';
+              const bannerUrl = !activeCollection?.handle
+                ? sliderImageUrl
+                : collection?.image?.url || sliderImageUrl;
               return bannerUrl ? (
                 <Image source={{ uri: bannerUrl }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
               ) : null;
@@ -139,7 +148,7 @@ export default function CategoriesScreen() {
                   className="text-xl text-white mb-1"
                   style={{ fontFamily: 'CormorantGaramond_500Medium' }}
                 >
-                  {activeCollectionTitle || t('categories.allJewelry')}
+                  {activeCollectionTitle || sliderTitle}
                 </Text>
               </View>
             </View>

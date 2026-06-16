@@ -680,6 +680,31 @@ export const GET_HERO_METAOBJECT_QUERY = `
   }
 `;
 
+export const GET_SLIDER_HERO_METAOBJECT_QUERY = `
+  query GetSliderHeroMetaobject {
+    metaobjects(type: "slider_hero", first: 1) {
+      nodes {
+        id
+        handle
+        fields {
+          key
+          value
+          type
+          reference {
+            __typename
+            ... on MediaImage {
+              image {
+                url
+                altText
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
 export const GET_SHOP_QUERY = `
   query GetShop {
     shop {
